@@ -27,13 +27,13 @@
     .btn.secondary{background:#0b1220;color:var(--ink);border:1px solid var(--line);font-weight:600}
     .btn.danger{background:var(--danger);color:white}
     .canvaswrap{position:relative;width:100%;max-width:860px;aspect-ratio:1/1;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#0b1220}
-    canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+    canvas{width:100%;height:100%;display:block;image-rendering:pixelated;touch-action:none}
     .controls{width:100%;max-width:860px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
     .pad{display:grid;grid-template-areas:". up ."
                                    "left . right"
                                    ". down .";
          gap:8px;place-items:center}
-    .pad button{width:64px;height:64px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:18px}
+    .pad button{width:64px;height:64px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:18px;touch-action:none;-webkit-tap-highlight-color:transparent}
     .pad .up{grid-area:up} .pad .down{grid-area:down}
     .pad .left{grid-area:left} .pad .right{grid-area:right}
     .settings{display:flex;flex-direction:column;gap:8px}
@@ -44,7 +44,7 @@
     @media (max-width:640px){
       header{flex-direction:column;align-items:stretch}
       .controls{grid-template-columns:1fr;gap:14px}
-      .pad button{width:72px;height:72px}
+      .pad button{width:72px;height:72px;touch-action:none;-webkit-tap-highlight-color:transparent}
       .btn{padding:12px 16px}
     }
   </style>
@@ -93,7 +93,7 @@
           <option value="11">Veloce</option>
         </select>
       </div>
-      <div class="hint">Tastiera: frecce o WASD • Mobile: swipe o pad</div>
+      <div class="hint">Tastiera: frecce o WASD • Mobile: swipe o pad • Spazio: pausa</div>
     </div>
     <div class="panel pad">
       <button class="up" aria-label="Su">↑</button>
@@ -106,7 +106,7 @@
     </div>
   </div>
 
-  <footer>Snake open‑source • MIT © 2025 • PezzaliAPP</footer>
+  <footer>Snake open-source • MIT © 2025 • PezzaliAPP</footer>
 </div>
 
 <script src="script.js"></script>

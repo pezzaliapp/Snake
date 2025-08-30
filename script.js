@@ -1,7 +1,6 @@
 (() => {
   'use strict';
 
-  // --- DOM helpers
   const $ = sel => document.querySelector(sel);
   const scoreEl = $('#score'), hiscoreEl = $('#hiscore'), speedvEl = $('#speedv');
   const cvs = $('#game'), wrap = $('#canvaswrap');
@@ -13,31 +12,22 @@
                 left: document.querySelector('.pad .left'),
                 right: document.querySelector('.pad .right') };
 
-  // --- State
-  let grid = 20;
-  let cell = 30;
-  let rows = grid, cols = grid;
+  let grid = 20, cell = 30, rows = 20, cols = 20;
   let snake, dir, nextDir, apple, score, hiscore, running = false, paused = false;
   let wrapMode = false;
-  let speed = 8; // ticks per second initial
-  let tickMs = 1000 / speed;
+  let speed = 8, tickMs = 1000/8;
   let acc = 0, lastTs = 0;
   let deferredPrompt = null;
 
-  // --- Resize canvas to fit container while keeping cells squared
   function resize() {
     const rect = wrap.getBoundingClientRect();
     const size = Math.floor(Math.min(rect.width, rect.height));
-    cvs.width = size;
-    cvs.height = size;
+    cvs.width = size; cvs.height = size;
     cell = Math.floor(size / grid);
-    // keep whole cells
-    cvs.width = cell * grid;
-    cvs.height = cell * grid;
+    cvs.width = cell * grid; cvs.height = cell * grid;
   }
   window.addEventListener('resize', resize, {passive:true});
 
-  // --- Game setup
   function newGame() {
     grid = parseInt(selGrid.value, 10);
     rows = cols = grid;
@@ -47,20 +37,17 @@
     speedvEl.textContent = (speed/8).toFixed(2).replace(/\.00$/, '') + 'x';
     resize();
     snake = [{x: Math.floor(cols/2), y: Math.floor(rows/2)}];
-    dir = {x:1,y:0};
-    nextDir = {x:1,y:0};
-    score = 0;
-    scoreEl.textContent = '0';
+    dir = {x:1,y:0}; nextDir = {x:1,y:0};
+    score = 0; scoreEl.textContent = '0';
     spawnApple();
     paused = false;
     updateHiscoreDisplay();
-    draw(); // draw initial state
+    draw();
   }
 
   function updateHiscoreDisplay() {
-    try {
-      hiscore = parseInt(localStorage.getItem('snake_hiscore') || '0', 10);
-    } catch(_) { hiscore = 0; }
+    try { hiscore = parseInt(localStorage.getItem('snake_hiscore') || '0', 10); }
+    catch(_) { hiscore = 0; }
     hiscoreEl.textContent = String(hiscore);
   }
   function saveHiscore() {
@@ -80,12 +67,11 @@
   }
 
   function setDir(nx, ny){
-    // prevent reversing directly
     if((nx === -dir.x && ny === -dir.y) || (nx === dir.x && ny === dir.y)) return;
     nextDir = {x:nx, y:ny};
   }
 
-  // --- Input
+  // Keyboard
   window.addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
     if(k === 'arrowup' || k === 'w') setDir(0,-1);
@@ -95,36 +81,41 @@
     else if(k === ' '){ togglePause(); }
   });
 
-  // Touch swipe
+  // Touch swipe (more sensitive) + prevent scroll
   let touchStart = null;
   cvs.addEventListener('touchstart', e => {
+    e.preventDefault();
     const t = e.changedTouches[0];
     touchStart = {x:t.clientX, y:t.clientY, t: Date.now()};
-  }, {passive:true});
+  }, {passive:false});
   cvs.addEventListener('touchend', e => {
+    e.preventDefault();
     if(!touchStart) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - touchStart.x;
     const dy = t.clientY - touchStart.y;
     const adx = Math.abs(dx), ady = Math.abs(dy);
-    if(Math.max(adx, ady) > 24){
+    if(Math.max(adx, ady) > 12){
       if(adx > ady) setDir(dx>0?1:-1,0);
       else setDir(0, dy>0?1:-1);
     }
     touchStart = null;
-  }, {passive:true});
+  }, {passive:false});
 
-  // Pad buttons
-  pad.up.addEventListener('click', () => setDir(0,-1));
-  pad.down.addEventListener('click', () => setDir(0,1));
-  pad.left.addEventListener('click', () => setDir(-1,0));
-  pad.right.addEventListener('click', () => setDir(1,0));
+  // Pad buttons (click + touchstart)
+  const addPadTouch = (el, dx, dy) => {
+    el.addEventListener('touchstart', ev => { ev.preventDefault(); setDir(dx, dy); }, {passive:false});
+    el.addEventListener('click', () => setDir(dx, dy));
+  };
+  addPadTouch(pad.up, 0, -1);
+  addPadTouch(pad.down, 0, 1);
+  addPadTouch(pad.left, -1, 0);
+  addPadTouch(pad.right, 1, 0);
 
   btnStart.addEventListener('click', start);
   btnPause.addEventListener('click', togglePause);
   btnReset.addEventListener('click', () => { newGame(); running=false; lastTs=0; acc=0; draw(); });
 
-  // PWA install
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
@@ -138,7 +129,6 @@
     btnInstall.style.display = 'none';
   });
 
-  // --- Loop
   function start(){
     if(!running){ running = true; paused=false; lastTs=performance.now(); acc = 0; requestAnimationFrame(loop); }
   }
@@ -161,28 +151,19 @@
   }
 
   function step(){
-    // apply buffered direction
     dir = nextDir;
     const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-    // wrapping or walls
     if(wrapMode){
       head.x = (head.x + cols) % cols;
       head.y = (head.y + rows) % rows;
     } else {
-      if(head.x < 0 || head.y < 0 || head.x >= cols || head.y >= rows){
-        gameOver(); return;
-      }
+      if(head.x < 0 || head.y < 0 || head.x >= cols || head.y >= rows){ gameOver(); return; }
     }
-    // self collision: compare head with the rest of the body only
-    if (snake.slice(1).some(s => s.x === head.x && s.y === head.y)) {
-      gameOver(); return;
-    }
+    // self collision: compare with body only
+    if (snake.slice(1).some(s => s.x === head.x && s.y === head.y)) { gameOver(); return; }
     snake.unshift(head);
-    // apple
     if(head.x === apple.x && head.y === apple.y){
-      score += 1;
-      scoreEl.textContent = String(score);
-      // slight speed up every 4 apples
+      score += 1; scoreEl.textContent = String(score);
       if(score % 4 === 0){
         speed = Math.min(18, speed+1);
         tickMs = 1000 / speed;
@@ -194,33 +175,25 @@
     }
   }
 
-  // --- Drawing
   const ctx = cvs.getContext('2d');
   function drawGrid(){
     const s = cell;
-    ctx.strokeStyle = '#1f2937';
-    ctx.lineWidth = 1;
-    for(let x=0;x<=cols;x++){
-      ctx.beginPath(); ctx.moveTo(x*s+0.5,0); ctx.lineTo(x*s+0.5,rows*s); ctx.stroke();
-    }
-    for(let y=0;y<=rows;y++){
-      ctx.beginPath(); ctx.moveTo(0,y*s+0.5); ctx.lineTo(cols*s,y*s+0.5); ctx.stroke();
-    }
+    ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+    for(let x=0;x<=cols;x++){ ctx.beginPath(); ctx.moveTo(x*s+0.5,0); ctx.lineTo(x*s+0.5,rows*s); ctx.stroke(); }
+    for(let y=0;y<=rows;y++){ ctx.beginPath(); ctx.moveTo(0,y*s+0.5); ctx.lineTo(cols*s,y*s+0.5); ctx.stroke(); }
   }
   function draw(){
     const s = cell;
-    ctx.fillStyle = '#0b1220';
-    ctx.fillRect(0,0,cvs.width,cvs.height);
-    // grid (subtle)
+    ctx.fillStyle = '#0b1220'; ctx.fillRect(0,0,cvs.width,cvs.height);
     drawGrid();
     // apple
     ctx.fillStyle = '#ef4444';
     roundRect(ctx, apple.x*s+2, apple.y*s+2, s-4, s-4, 6, true);
-    // snake
+    // snake (head brighter)
     for(let i=snake.length-1;i>=0;i--){
       const seg = snake[i];
-      const alpha = Math.max(.5, 1 - i / (snake.length*1.2));
-      ctx.fillStyle = `rgba(34,197,94,${alpha.toFixed(3)})`;
+      const color = (i===0) ? '#84cc16' : '#22c55e';
+      ctx.fillStyle = color;
       roundRect(ctx, seg.x*s+1, seg.y*s+1, s-2, s-2, 8, true);
     }
     if(!running){
@@ -254,7 +227,6 @@
   function gameOver(){
     running = false;
     saveHiscore();
-    // flash
     const s = cell;
     ctx.fillStyle = 'rgba(239,68,68,.2)';
     ctx.fillRect(0,0,cvs.width,cvs.height);
@@ -264,7 +236,5 @@
     ctx.fillText('Game Over', cvs.width/2, cvs.height/2);
   }
 
-  // Init
   newGame();
-
 })();
