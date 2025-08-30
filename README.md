@@ -1,5 +1,3 @@
-Perfetto 🙌 Ecco il README.md aggiornato con un bel badge “Play Online” subito sotto al titolo:
-
 # 🐍🍎 Snake — PezzaliAPP
 
 [![Play Online](https://img.shields.io/badge/Play%20Online-Snake-green?style=for-the-badge&logo=apple)](https://www.alessandropezzali.it/Snake/)
@@ -78,8 +76,3 @@ Snake/
 
 MIT © 2025 — PezzaliAPP
 Sviluppato con ❤️ per rendere open-source anche il divertimento.
-
-⸻
-
-
-Vuoi che ti prepari anche una **cover grafica orizzontale** (tipo banner 1280×640) con il titolo *Snake — PezzaliAPP*, icona e sfondo scuro, da usare come intestazione della repo?
