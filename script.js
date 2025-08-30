@@ -173,8 +173,8 @@
         gameOver(); return;
       }
     }
-    // self collision
-    if(snake.some(s => s.x===head.x && s.y===head.y)){
+    // self collision: compare head with the rest of the body only
+    if (snake.slice(1).some(s => s.x === head.x && s.y === head.y)) {
       gameOver(); return;
     }
     snake.unshift(head);
